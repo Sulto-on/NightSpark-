@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NightSpark</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',sans-serif;background:#0d0014;color:#fff;min-height:100vh;overflow-x:hidden;}
+  .screen{display:none;min-height:100vh;padding:20px;}
+  .screen.active{display:flex;flex-direction:column;align-items:center;}
+  /* GLOW */
+  .glow{text-shadow:0 0 20px #c084fc,0 0 40px #a855f7;}
+  .btn{background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:#fff;padding:12px 28px;border-radius:50px;font-size:1rem;cursor:pointer;transition:all .2s;box-shadow:0 0 15px #7c3aed88;}
+  .btn:hover{transform:scale(1.05);box-shadow:0 0 25px #a855f7;}
+  .btn-outline{background:transparent;border:2px solid #a855f7;color:#a855f7;padding:10px 24px;border-radius:50px;font-size:.95rem;cursor:pointer;transition:all .2s;}
+  .btn-outline:hover{background:#a855f722;}
+  .btn-sm{padding:8px 18px;font-size:.85rem;}
+  .card{background:linear-gradient(145deg,#1a0030,#2d0050);border:1px solid #7c3aed55;border-radius:20px;padding:24px;width:100%;max-width:480px;box-shadow:0 0 30px #7c3aed33;}
+
+  /* HOME */
+  #home{justify-content:center;gap:20px;text-align:center;background:radial-gradient(ellipse at top,#3b0764 0%,#0d0014 70%);}
+  #home h1{font-size:2.8rem;font-weight:900;margin-bottom:4px;}
+  #home p{color:#c084fc;margin-bottom:10px;}
+  .player-setup{width:100%;max-width:420px;}
+  .player-input-row{display:flex;gap:8px;margin-bottom:10px;}
+  .player-input-row input{flex:1;background:#1a0030;border:1px solid #7c3aed;border-radius:50px;padding:10px 16px;color:#fff;font-size:.95rem;outline:none;}
+  .player-input-row input::placeholder{color:#7c3aed88;}
+  #playerList{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .player-tag{background:#3b0764;border:1px solid #a855f7;border-radius:50px;padding:5px 14px;font-size:.85rem;display:flex;align-items:center;gap:6px;}
+  .player-tag span{cursor:pointer;color:#f87171;}
+
+  /* GAME HUB */
+  #hub{gap:16px;background:radial-gradient(ellipse at bottom,#2d0050 0%,#0d0014 70%);}
+  #hub h2{font-size:1.8rem;font-weight:800;margin:10px 0 4px;}
+  .game-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:480px;}
+  .game-card{background:linear-gradient(145deg,#1a0030,#2d0050);border:1px solid #7c3aed55;border-radius:18px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 0 10px #7c3aed22;}
+  .game-card:hover{transform:translateY(-4px);border-color:#a855f7;box-shadow:0 0 25px #a855f755;}
+  .game-card .icon{font-size:2rem;margin-bottom:8px;}
+  .game-card h3{font-size:.95rem;font-weight:700;}
+
+  /* GAME SCREEN */
+  #game{gap:16px;background:#0d0014;}
+  #game h2{font-size:1.6rem;font-weight:800;text-align:center;}
+  .turn-banner{background:linear-gradient(135deg,#3b0764,#6d28d9);border-radius:50px;padding:8px 24px;font-size:.9rem;color:#e9d5ff;}
+  .content-card{background:linear-gradient(145deg,#1a0030,#3b0764);border:1px solid #a855f7;border-radius:24px;padding:30px 24px;width:100%;max-width:480px;text-align:center;min-height:160px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px #7c3aed55;}
+  .content-card p{font-size:1.2rem;line-height:1.6;color:#f3e8ff;}
+  .game-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .score-board{width:100%;max-width:480px;}
+  .score-board h3{font-size:1rem;color:#c084fc;margin-bottom:8px;text-align:center;}
+  .score-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .score-item{background:#1a0030;border:1px solid #6d28d9;border-radius:50px;padding:5px 14px;font-size:.82rem;}
+
+  /* SPIN BOTTLE */
+  .bottle-container{position:relative;width:200px;height:200px;margin:10px auto;}
+  .bottle-bg{width:200px;height:200px;border-radius:50%;background:linear-gradient(145deg,#1a0030,#3b0764);border:3px solid #a855f7;display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px #7c3aed55;}
+  #bottleArrow{font-size:3rem;display:inline-block;transition:transform 3s cubic-bezier(.17,.67,.12,.99);}
+  .spin-result{margin-top:10px;font-size:1.1rem;color:#e9d5ff;text-align:center;min-height:28px;}
+
+  /* CHARADES TIMER */
+  .timer-ring{font-size:2.5rem;font-weight:900;color:#a855f7;text-shadow:0 0 20px #a855f7;}
+
+  .back-row{width:100%;max-width:480px;display:flex;justify-content:flex-start;margin-bottom:4px;}
+  .badge{display:inline-block;background:#3b0764;border-radius:50px;padding:3px 12px;font-size:.78rem;color:#c084fc;margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div id="home" class="screen active">
+  <div style="font-size:3rem;margin-bottom:4px;">🌙</div>
+  <h1 class="glow">NightSpark</h1>
+  <p>The ultimate party game hub</p>
+  <div class="player-setup card">
+    <p style="margin-bottom:12px;font-size:.95rem;color:#c084fc;">Add players to get started</p>
+    <div class="player-input-row">
+      <input type="text" id="playerInput" placeholder="Enter player name..." maxlength="20"/>
+      <button class="btn btn-sm" onclick="addPlayer()">Add</button>
+    </div>
+    <div id="playerList"></div>
+    <button class="btn" style="width:100%" onclick="goToHub()">Let's Play 🎉</button>
+  </div>
+</div>
+
+<!-- GAME HUB -->
+<div id="hub" class="screen">
+  <div style="font-size:2.5rem">🌙</div>
+  <h2 class="glow">Pick a Game</h2>
+  <div id="hubPlayers" style="color:#c084fc;font-size:.88rem;margin-bottom:6px;"></div>
+  <div class="game-grid">
+    <div class="game-card" onclick="startGame('tod')"><div class="icon">🔥</div><h3>Truth or Dare</h3></div>
+    <div class="game-card" onclick="startGame('nhie')"><div class="icon">🙅</div><h3>Never Have I Ever</h3></div>
+    <div class="game-card" onclick="startGame('wyr')"><div class="icon">🤔</div><h3>Would You Rather</h3></div>
+    <div class="game-card" onclick="startGame('spin')"><div class="icon">🍾</div><h3>Spin the Bottle</h3></div>
+    <div class="game-card" onclick="startGame('trivia')"><div class="icon">🧠</div><h3>Trivia / Quiz</h3></div>
+    <div class="game-card" onclick="startGame('drink')"><div class="icon">🍺</div><h3>Drinking Game</h3></div>
+    <div class="game-card" onclick="startGame('charades')" style="grid-column:span 2"><div class="icon">🎭</div><h3>Charades / Acting</h3></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:10px;background:#1a0030;border:1px solid #7c3aed55;border-radius:50px;padding:10px 20px;">
+    <span style="font-size:.9rem;color:#c084fc;">🔞 Naughty Mode</span>
+    <div id="naughtyToggle" onclick="toggleNaughty()" style="width:48px;height:26px;background:#3b0764;border-radius:50px;cursor:pointer;position:relative;transition:background .3s;border:2px solid #7c3aed;">
+      <div id="toggleDot" style="width:20px;height:20px;background:#a855f7;border-radius:50%;position:absolute;top:1px;left:2px;transition:left .3s;box-shadow:0 0 8px #a855f7;"></div>
+    </div>
+    <span id="naughtyLabel" style="font-size:.82rem;color:#6d28d9;">OFF</span>
+  </div>
+  <button class="btn-outline" style="margin-top:6px" onclick="showScreen('home')">✏️ Edit Players</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game" class="screen">
+  <div class="back-row"><button class="btn-outline btn-sm" onclick="showScreen('hub')">← Back</button></div>
+  <h2 id="gameTitle" class="glow"></h2>
+  <div id="turnBanner" class="turn-banner"></div>
+  <div id="gameBody" style="width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;gap:14px;"></div>
+</div>
+
+<script>
+let players = [];
+let currentPlayerIdx = 0;
+let currentGame = '';
+let scores = {};
+let triviaAnswer = '';
+let charadesTimer = null;
+let bottleDeg = 0;
+
+let naughtyMode = false;
+
+const data = {
+  tod: {
+    truth: ["What's the most embarrassing thing you've done?","Have you ever lied to your best friend?","What's your biggest secret?","Who was your first crush?","What's a bad habit you have?","Have you ever cheated on a test?","What's the weirdest dream you've had?","Have you ever ghosted someone?","What's something you've never told anyone?","Do you have a hidden talent?"],
+    dare: ["Do your best dance move for 30 seconds","Text someone random 'I miss you'","Speak in an accent for the next 3 rounds","Let someone post anything on your social media","Do 15 push-ups","Call someone and sing Happy Birthday","Eat a spoonful of hot sauce","Let the group go through your camera roll for 30 seconds","Do an impression of someone in the group","Talk without closing your mouth for 1 minute"],
+    naughty_truth: ["What's the most attractive thing about someone in this room?","Have you ever had a crush on someone here?","What's your biggest turn-on?","Have you ever flirted with someone just for fun?","What's the boldest move you've ever made on someone you liked?","Have you ever kissed someone on a dare?","Rate everyone in the room by attractiveness — out loud","What's the most romantic thing someone has done for you?","Have you ever sent a flirty text to the wrong person?","What's your worst date story?"],
+    naughty_dare: ["Give a 10-second shoulder massage to the person on your left","Whisper something flirty to the person across from you","Let someone draw on your face with a marker","Sit on someone's lap for the next 2 rounds","Do your best sexy walk across the room","Let the group rate your flirting skills — demonstrate on an object","Stare into someone's eyes for 30 seconds without laughing","Text your crush right now — group picks the message","Do a slow dance by yourself for 20 seconds","Let someone style your hair however they want"]
+  },
+  nhie: ["Never have I ever gone skinny dipping","Never have I ever lied about my age","Never have I ever stayed up all night","Never have I ever cried at a movie","Never have I ever eaten food off the floor","Never have I ever pretended to be sick to skip something","Never have I ever stolen something","Never have I ever sent a message to the wrong person","Never have I ever faked a phone call","Never have I ever slept through an alarm and missed something important","Never have I ever laughed so hard I cried","Never have I ever forgotten someone's birthday"],
+  nhie_naughty: ["Never have I ever flirted with someone in this room","Never have I ever kissed someone I just met","Never have I ever had a secret admirer","Never have I ever pretended not to like someone I actually liked","Never have I ever stayed up all night texting someone I liked","Never have I ever dated two people at the same time","Never have I ever been on a blind date","Never have I ever asked someone out and got rejected","Never have I ever had a crush on a friend's partner","Never have I ever sent a risky text by mistake"],
+  wyr: ["Would you rather be invisible or fly?","Would you rather always be late or always be 3 hours early?","Would you rather lose your phone or your wallet?","Would you rather never use social media again or never watch movies again?","Would you rather be always cold or always hot?","Would you rather speak every language or play every instrument?","Would you rather have no internet or no AC/heat?","Would you rather live in the city or the countryside?","Would you rather know when you'll die or how you'll die?","Would you rather always win arguments or always get what you want?"],
+  wyr_naughty: ["Would you rather be a great kisser or a great hugger?","Would you rather date someone funny or someone attractive?","Would you rather have your crush know your feelings or never find out?","Would you rather go on a romantic dinner date or a wild night out?","Would you rather be too loved or not loved enough?","Would you rather date someone older or younger than you?","Would you rather have one passionate relationship or many fun flings?","Would you rather your ex sees you glow up or your crush?","Would you rather flirt confidently or be chased?","Would you rather marry your best friend or your soulmate?"],
+  trivia: [
+    {q:"What planet is closest to the sun?",a:"Mercury",opts:["Venus","Mercury","Mars","Jupiter"]},
+    {q:"How many sides does a hexagon have?",a:"6",opts:["5","6","7","8"]},
+    {q:"Who painted the Mona Lisa?",a:"Leonardo da Vinci",opts:["Picasso","Michelangelo","Leonardo da Vinci","Raphael"]},
+    {q:"What is the capital of France?",a:"Paris",opts:["London","Berlin","Madrid","Paris"]},
+    {q:"What is the largest ocean on Earth?",a:"Pacific",opts:["Atlantic","Indian","Pacific","Arctic"]},
+    {q:"How many colors are in a rainbow?",a:"7",opts:["5","6","7","8"]},
+    {q:"What gas do plants absorb?",a:"CO2",opts:["Oxygen","Nitrogen","CO2","Hydrogen"]},
+    {q:"What year did the Titanic sink?",a:"1912",opts:["1905","1912","1918","1923"]},
+  ],
+  drink: ["Take a sip if you've broken a rule tonight","The last person to check their phone drinks","Whoever laughs next takes a sip","Everyone points at the person most likely to fall asleep — that person drinks","Take a sip for every year of your age... just kidding, take 2 sips","Waterfall — everyone starts drinking, you can only stop when the person before you stops","The person to your left picks a rule for the rest of the game","Never Have I Ever — hold up 3 fingers, drink for each one that applies","Kings rule: Everyone who loses this round drinks","Anyone with a name starting with vowels drinks"],
+  charades: ["Moonwalk","Sleeping","Crying baby","Flying a kite","Texting while walking","Swimming","Playing guitar","Sneezing","Riding a horse","Making pizza","Taking a selfie","Winning a trophy","Being chased","Eating spaghetti","Doing yoga"]
+};
+
+function toggleNaughty(){
+  naughtyMode = !naughtyMode;
+  document.getElementById('toggleDot').style.left = naughtyMode ? '24px' : '2px';
+  document.getElementById('naughtyToggle').style.background = naughtyMode ? '#6d28d9' : '#3b0764';
+  document.getElementById('naughtyLabel').textContent = naughtyMode ? '🔥 ON' : 'OFF';
+  document.getElementById('naughtyLabel').style.color = naughtyMode ? '#f0abfc' : '#6d28d9';
+}
+
+function addPlayer(){
+  const inp = document.getElementById('playerInput');
+  const name = inp.value.trim();
+  if(!name || players.includes(name)) return;
+  players.push(name);
+  scores[name] = 0;
+  renderPlayerList();
+  inp.value = '';
+}
+
+document.getElementById('playerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer(); });
+
+function removePlayer(n){
+  players = players.filter(p=>p!==n);
+  delete scores[n];
+  renderPlayerList();
+}
+
+function renderPlayerList(){
+  const el = document.getElementById('playerList');
+  el.innerHTML = players.map(p=>`<div class="player-tag">👤 ${p} <span onclick="removePlayer('${p}')">✕</span></div>`).join('');
+}
+
+function goToHub(){
+  if(players.length < 2){ alert('Add at least 2 players!'); return; }
+  document.getElementById('hubPlayers').textContent = '👥 ' + players.join(', ');
+  showScreen('hub');
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(charadesTimer){ clearInterval(charadesTimer); charadesTimer=null; }
+}
+
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function nextPlayer(){ currentPlayerIdx=(currentPlayerIdx+1)%players.length; }
+function currentPlayer(){ return players[currentPlayerIdx]; }
+
+function startGame(game){
+  currentGame = game;
+  currentPlayerIdx = 0;
+  showScreen('game');
+  const titles = {tod:'🔥 Truth or Dare',nhie:'🙅 Never Have I Ever',wyr:'🤔 Would You Rather',spin:'🍾 Spin the Bottle',trivia:'🧠 Trivia Quiz',drink:'🍺 Drinking Game',charades:'🎭 Charades'};
+  document.getElementById('gameTitle').textContent = titles[game];
+  renderGame();
+}
+
+function renderGame(){
+  const body = document.getElementById('gameBody');
+  const banner = document.getElementById('turnBanner');
+  banner.textContent = `🎯 ${currentPlayer()}'s turn`;
+
+  if(currentGame==='tod') renderToD(body);
+  else if(currentGame==='nhie') renderNHIE(body);
+  else if(currentGame==='wyr') renderWYR(body);
+  else if(currentGame==='spin') renderSpin(body);
+  else if(currentGame==='trivia') renderTrivia(body);
+  else if(currentGame==='drink') renderDrink(body);
+  else if(currentGame==='charades') renderCharades(body);
+}
+
+function renderToD(body){
+  body.innerHTML = `
+    <div style="display:flex;gap:12px;">
+      <button class="btn" onclick="showToD('truth')">🤫 Truth</button>
+      <button class="btn" onclick="showToD('dare')">🔥 Dare</button>
+    </div>
+    <div id="todContent" class="content-card" style="display:none"><p></p></div>
+    <button class="btn-outline" onclick="nextPlayer();renderGame()">Next Player ➜</button>
+  `;
+}
+function showToD(type){
+  const card = document.getElementById('todContent');
+  card.style.display='flex';
+  const pool = naughtyMode ? data.tod[`naughty_${type}`] : data.tod[type];
+  card.querySelector('p').textContent = rand(pool);
+}
+
+function renderNHIE(body){
+  const stmt = rand(naughtyMode ? data.nhie_naughty : data.nhie);
+  body.innerHTML = `
+    <div class="content-card"><p>${stmt}</p></div>
+    <p style="color:#c084fc;font-size:.88rem;text-align:center">🙋 Raise your hand if you HAVE — those who have, take a sip!</p>
+    <button class="btn" onclick="nextPlayer();renderGame()">Next ➜</button>
+  `;
+}
+
+function renderWYR(body){
+  const q = rand(naughtyMode ? data.wyr_naughty : data.wyr);
+  body.innerHTML = `
+    <div class="content-card"><p>${q}</p></div>
+    <p style="color:#c084fc;font-size:.88rem;text-align:center">🗣 Everyone votes! Minority drinks.</p>
+    <button class="btn" onclick="nextPlayer();renderGame()">Next ➜</button>
+  `;
+}
+
+function renderSpin(body){
+  body.innerHTML = `
+    <div class="bottle-container">
+      <div class="bottle-bg"><span id="bottleArrow">🍾</span></div>
+    </div>
+    <div class="spin-result" id="spinResult">Tap spin to pick someone!</div>
+    <button class="btn" onclick="spinBottle()">🌀 Spin!</button>
+    <button class="btn-outline" onclick="nextPlayer();renderGame()">Next Player ➜</button>
+  `;
+}
+function spinBottle(){
+  const extra = 720 + Math.floor(Math.random()*360);
+  bottleDeg += extra;
+  document.getElementById('bottleArrow').style.transform=`rotate(${bottleDeg}deg)`;
+  const picked = rand(players.filter(p=>p!==currentPlayer()));
+  setTimeout(()=>{ document.getElementById('spinResult').textContent=`✨ Landed on: ${picked}!`; }, 3100);
+}
+
+function renderTrivia(body){
+  const q = rand(data.trivia);
+  triviaAnswer = q.a;
+  const opts = [...q.opts].sort(()=>Math.random()-.5);
+  body.innerHTML = `
+    <div class="content-card"><p>${q.q}</p></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:480px;">
+      ${opts.map(o=>`<button class="btn-outline" onclick="checkAnswer(this,'${o}')">${o}</button>`).join('')}
+    </div>
+    ${renderScores()}
+    <button class="btn-outline" onclick="nextPlayer();renderGame()">Next Player ➜</button>
+  `;
+}
+function checkAnswer(btn, ans){
+  document.querySelectorAll('#gameBody .btn-outline').forEach(b=>b.disabled=true);
+  if(ans===triviaAnswer){
+    btn.style.background='#16a34a';btn.style.borderColor='#16a34a';btn.style.color='#fff';
+    scores[currentPlayer()]++;
+  } else {
+    btn.style.background='#dc2626';btn.style.borderColor='#dc2626';btn.style.color='#fff';
+    // highlight correct
+    document.querySelectorAll('#gameBody .btn-outline').forEach(b=>{ if(b.textContent===triviaAnswer){b.style.background='#16a34a';b.style.borderColor='#16a34a';b.style.color='#fff';}});
+  }
+}
+function renderScores(){
+  return `<div class="score-board"><h3>🏆 Scores</h3><div class="score-list">${players.map(p=>`<div class="score-item">${p}: ${scores[p]||0}</div>`).join('')}</div></div>`;
+}
+
+function renderDrink(body){
+  const rule = rand(data.drink);
+  body.innerHTML = `
+    <div class="badge">🍺 Drink Rule</div>
+    <div class="content-card"><p>${rule}</p></div>
+    <p style="color:#c084fc;font-size:.82rem;text-align:center">🫗 Drink responsibly. Water counts too!</p>
+    <button class="btn" onclick="nextPlayer();renderGame()">Next ➜</button>
+  `;
+}
+
+function renderCharades(body){
+  const word = rand(data.charades);
+  let secs = 60;
+  if(charadesTimer) clearInterval(charadesTimer);
+  body.innerHTML = `
+    <p style="color:#c084fc;font-size:.88rem">Only <strong>${currentPlayer()}</strong> looks at this!</p>
+    <div class="content-card" id="charadesCard" style="display:none"><p id="charadesWord">${word}</p></div>
+    <div class="timer-ring" id="charadesTimer">⏱ 60s</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn" onclick="revealCharades()">👁 Reveal Word</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#16a34a,#22c55e)" onclick="nextPlayer();renderGame()">✅ Guessed!</button>
+      <button class="btn-outline btn-sm" onclick="nextPlayer();renderGame()">⏭ Skip</button>
+    </div>
+  `;
+  charadesTimer = setInterval(()=>{
+    secs--;
+    const el = document.getElementById('charadesTimer');
+    if(el) el.textContent = secs > 0 ? `⏱ ${secs}s` : "⌛ Time's up!";
+    if(secs<=0){ clearInterval(charadesTimer); charadesTimer=null; }
+  },1000);
+}
+function revealCharades(){
+  document.getElementById('charadesCard').style.display='flex';
+}
+</script>
+</body>
+</html>
