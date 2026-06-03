@@ -96,12 +96,14 @@
     <div class="game-card" onclick="startGame('drink')"><div class="icon">🍺</div><h3>Drinking Game</h3></div>
     <div class="game-card" onclick="startGame('charades')" style="grid-column:span 2"><div class="icon">🎭</div><h3>Charades / Acting</h3></div>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;margin-top:10px;background:#1a0030;border:1px solid #7c3aed55;border-radius:50px;padding:10px 20px;">
-    <span style="font-size:.9rem;color:#c084fc;">🔞 Naughty Mode</span>
-    <div id="naughtyToggle" onclick="toggleNaughty()" style="width:48px;height:26px;background:#3b0764;border-radius:50px;cursor:pointer;position:relative;transition:background .3s;border:2px solid #7c3aed;">
-      <div id="toggleDot" style="width:20px;height:20px;background:#a855f7;border-radius:50%;position:absolute;top:1px;left:2px;transition:left .3s;box-shadow:0 0 8px #a855f7;"></div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;background:#1a0030;border:1px solid #7c3aed55;border-radius:20px;padding:14px 20px;width:100%;max-width:480px;">
+    <p style="color:#c084fc;font-size:.88rem;text-align:center;">🎮 Game Mode</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button id="modeNormal" onclick="setMode(0)" style="flex:1;padding:10px;border-radius:50px;border:2px solid #7c3aed;background:#3b0764;color:#fff;cursor:pointer;font-size:.85rem;font-weight:700;">😊 Normal</button>
+      <button id="modeNaughty" onclick="setMode(1)" style="flex:1;padding:10px;border-radius:50px;border:2px solid #7c3aed55;background:transparent;color:#a855f7;cursor:pointer;font-size:.85rem;font-weight:700;">🔞 Naughty</button>
+      <button id="modeExtreme" onclick="setMode(2)" style="flex:1;padding:10px;border-radius:50px;border:2px solid #7c3aed55;background:transparent;color:#a855f7;cursor:pointer;font-size:.85rem;font-weight:700;">💀 Extreme</button>
     </div>
-    <span id="naughtyLabel" style="font-size:.82rem;color:#6d28d9;">OFF</span>
+    <p id="modeDesc" style="color:#c084fc;font-size:.78rem;text-align:center;">Clean and fun for everyone!</p>
   </div>
   <button class="btn-outline" style="margin-top:6px" onclick="showScreen('home')">✏️ Edit Players</button>
 </div>
@@ -123,7 +125,7 @@ let triviaAnswer = '';
 let charadesTimer = null;
 let bottleDeg = 0;
 
-let naughtyMode = false;
+let naughtyMode = 0; // 0=normal, 1=naughty, 2=extreme
 
 const data = {
   tod: {
@@ -136,6 +138,10 @@ const data = {
   nhie_naughty: ["Never have I ever flirted with someone in this room","Never have I ever kissed someone I just met","Never have I ever had a secret admirer","Never have I ever pretended not to like someone I actually liked","Never have I ever stayed up all night texting someone I liked","Never have I ever dated two people at the same time","Never have I ever been on a blind date","Never have I ever asked someone out and got rejected","Never have I ever had a crush on a friend's partner","Never have I ever sent a risky text by mistake"],
   wyr: ["Would you rather be invisible or fly?","Would you rather always be late or always be 3 hours early?","Would you rather lose your phone or your wallet?","Would you rather never use social media again or never watch movies again?","Would you rather be always cold or always hot?","Would you rather speak every language or play every instrument?","Would you rather have no internet or no AC/heat?","Would you rather live in the city or the countryside?","Would you rather know when you'll die or how you'll die?","Would you rather always win arguments or always get what you want?"],
   wyr_naughty: ["Would you rather be a great kisser or a great hugger?","Would you rather date someone funny or someone attractive?","Would you rather have your crush know your feelings or never find out?","Would you rather go on a romantic dinner date or a wild night out?","Would you rather be too loved or not loved enough?","Would you rather date someone older or younger than you?","Would you rather have one passionate relationship or many fun flings?","Would you rather your ex sees you glow up or your crush?","Would you rather flirt confidently or be chased?","Would you rather marry your best friend or your soulmate?"],
+  tod_extreme_truth: ["What's the most sexually adventurous thing you've ever done?","Have you ever had a friends with benefits situation — with anyone in this room?","What's the wildest place you've ever had sex?","Have you ever sexted someone in this room?","What's the dirtiest thing you've ever said to someone in bed?","Have you ever had a threesome or wanted one?","What body part do you find most attractive on the opposite sex?","Have you ever had sex with someone and regretted it immediately?","What's your biggest sexual fantasy you've never told anyone?","Have you ever secretly watched someone and felt attracted to them?"],
+  tod_extreme_dare: ["Sit on the lap of the most attractive person in the room for the next 2 rounds","Let someone in the room kiss you on the neck","Remove one item of clothing and keep it off for 3 rounds","Let the group pick someone to give you a 30 second kiss","Twerk on the person to your left for 15 seconds","Let someone draw anywhere on your body with a marker","Moan loudly for 5 seconds — no context","Text someone outside this room something seductive — group picks who","Let someone in the room smell your neck and rate it","Do a full body slow dance pressed against the person the group chooses"],
+  nhie_extreme: ["Never have I ever had sex with someone in this room","Never have I ever sent a nude to the wrong person","Never have I ever had sex in a car","Never have I ever faked an orgasm","Never have I ever had a threesome","Never have I ever done something sexual in a public place","Never have I ever slept with someone twice my age","Never have I ever had phone sex","Never have I ever been walked in on during sex","Never have I ever had sex on the first date"],
+  wyr_extreme: ["Would you rather have loud passionate sex with thin walls or dead silent sex forever?","Would you rather your sex tape leak or your diary?","Would you rather have sex in an elevator or on a rooftop?","Would you rather be completely dominant or completely submissive in bed?","Would you rather have amazing sex with a stranger or average sex with someone you love?","Would you rather moan the wrong name or have your partner moan the wrong name?","Would you rather have no sex for a year or no kissing for a year?","Would you rather your parents find your search history or your texts?","Would you rather sleep with your ex again or never have sex for 6 months?","Would you rather have sex with the lights fully on or completely pitch black?"],
   trivia: [
     {q:"What planet is closest to the sun?",a:"Mercury",opts:["Venus","Mercury","Mars","Jupiter"]},
     {q:"How many sides does a hexagon have?",a:"6",opts:["5","6","7","8"]},
@@ -150,13 +156,20 @@ const data = {
   charades: ["Moonwalk","Sleeping","Crying baby","Flying a kite","Texting while walking","Swimming","Playing guitar","Sneezing","Riding a horse","Making pizza","Taking a selfie","Winning a trophy","Being chased","Eating spaghetti","Doing yoga"]
 };
 
-function toggleNaughty(){
-  naughtyMode = !naughtyMode;
-  document.getElementById('toggleDot').style.left = naughtyMode ? '24px' : '2px';
-  document.getElementById('naughtyToggle').style.background = naughtyMode ? '#6d28d9' : '#3b0764';
-  document.getElementById('naughtyLabel').textContent = naughtyMode ? '🔥 ON' : 'OFF';
-  document.getElementById('naughtyLabel').style.color = naughtyMode ? '#f0abfc' : '#6d28d9';
+function setMode(mode){
+  naughtyMode = mode;
+  const btns = ['modeNormal','modeNaughty','modeExtreme'];
+  const descs = ['Clean and fun for everyone! 😊','Flirty and bold 🔥','Wild and extreme adults only! 💀'];
+  btns.forEach((id,i)=>{
+    const btn = document.getElementById(id);
+    btn.style.background = i===mode ? '#3b0764' : 'transparent';
+    btn.style.borderColor = i===mode ? '#a855f7' : '#7c3aed55';
+    btn.style.color = i===mode ? '#fff' : '#a855f7';
+  });
+  document.getElementById('modeDesc').textContent = descs[mode];
 }
+
+function toggleNaughty(){} // legacy, replaced by setMode
 
 function addPlayer(){
   const inp = document.getElementById('playerInput');
@@ -233,12 +246,19 @@ function renderToD(body){
 function showToD(type){
   const card = document.getElementById('todContent');
   card.style.display='flex';
-  const pool = naughtyMode ? data.tod[`naughty_${type}`] : data.tod[type];
+  let pool;
+  if(naughtyMode===2) pool = data.tod[`extreme_${type}`] || data.tod[`naughty_${type}`];
+  else if(naughtyMode===1) pool = data.tod[`naughty_${type}`];
+  else pool = data.tod[type];
   card.querySelector('p').textContent = rand(pool);
 }
 
 function renderNHIE(body){
-  const stmt = rand(naughtyMode ? data.nhie_naughty : data.nhie);
+  let pool;
+  if(naughtyMode===2) pool = data.nhie_extreme;
+  else if(naughtyMode===1) pool = data.nhie_naughty;
+  else pool = data.nhie;
+  const stmt = rand(pool);
   body.innerHTML = `
     <div class="content-card"><p>${stmt}</p></div>
     <p style="color:#c084fc;font-size:.88rem;text-align:center">🙋 Raise your hand if you HAVE — those who have, take a sip!</p>
@@ -247,7 +267,11 @@ function renderNHIE(body){
 }
 
 function renderWYR(body){
-  const q = rand(naughtyMode ? data.wyr_naughty : data.wyr);
+  let pool;
+  if(naughtyMode===2) pool = data.wyr_extreme;
+  else if(naughtyMode===1) pool = data.wyr_naughty;
+  else pool = data.wyr;
+  const q = rand(pool);
   body.innerHTML = `
     <div class="content-card"><p>${q}</p></div>
     <p style="color:#c084fc;font-size:.88rem;text-align:center">🗣 Everyone votes! Minority drinks.</p>
